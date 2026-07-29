@@ -1,4 +1,4 @@
-# SentinelML — Real-Time Fraud Scoring System
+# Sentinel — Real-Time Fraud Scoring System
 
 > An ML *systems* engineering project: the model is intentionally simple. The point is everything around it — serving, monitoring, drift detection, and CI/CD.
 
