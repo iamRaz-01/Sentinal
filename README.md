@@ -141,7 +141,3 @@ docker compose up --build
 - System design that anticipates growth (multi-model registry) without over-building for a v1
 
 ---
-
-## License
-
-MIT
