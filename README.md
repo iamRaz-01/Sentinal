@@ -327,10 +327,3 @@ Historical Transactions → Graph Builder → GNN → Account Embeddings → sto
 Every requirement has a corresponding field, service, and diagram element — no orphaned requirements, no undocumented features.
 
 ---
-
-## 14. What's Still Needed Before Review 1 / Review 2
-
-- [ ] Wireframes (Dashboard + Transaction Detail screens — content already specified in Section 8)
-- [ ] GitHub repository initialized with this documentation
-- [ ] Dataset selected and downloaded (public fraud dataset — ULB Credit Card Fraud recommended for Week 2 baseline)
-- [ ] XGBoost baseline trained and evaluated on PR-AUC/F1 (not accuracy) — first Week 2 build task
