@@ -1,15 +1,11 @@
 # AI-Powered Fraud Detection & Investigation Support System
-### Project Documentation — Week 1 / Week 2 Deliverables
+### Project Documentation 
 
 ---
 
-## 1. Finalized Project Title
+## Project Title
 
 **"An AI-Powered Fraud Detection and Investigation Support System using Transaction-Level Machine Learning and Graph-Based Network Intelligence"**
-
-Short form (for repo/report headers): **Fraud Investigation Support System (FISS)**
-
-*Reasoning:* The title names the actor's function (investigation support, not "fraud prevention" — the system doesn't block anything, the analyst decides), and names both ML components without overclaiming what's built in the MVP vs. Phase 2.
 
 ---
 
@@ -44,20 +40,20 @@ Fraud analysts at financial institutions are responsible for reviewing transacti
 
 ## 5. Scope
 
-### In Scope — MVP (Weeks 1–2, this deliverable)
+### In Scope — MVP 
 - Transaction ingestion (batch or simulated stream) and risk scoring via XGBoost
 - Threshold-based flagging
 - Risk-ranked analyst dashboard
 - Transaction detail view with risk score and top contributing risk factors
 - Analyst decision recording (Fraud / Legitimate / Escalate)
 
-### Phase 2 (Weeks 3–5 — designed for, not built yet)
+### Phase 2 
 - Account/transaction graph construction
 - GNN-based network risk scoring (fraud-ring detection)
 - Combined transaction + network risk score
 - Connected-account view on the transaction detail screen
 
-### Phase 3 (Optional — out of scope for this project's build)
+### Phase 3 
 - Real-time streaming infrastructure (Kafka)
 - Multi-analyst workload coordination (claim/ownership, SLA tracking)
 - Feedback loop for model retraining from analyst decisions
