@@ -188,7 +188,136 @@ sequenceDiagram
 **Tables (PostgreSQL):**
 
 ```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- ============ ACCOUNT ============
+CREATE TABLE account (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_number  VARCHAR(34) NOT NULL UNIQUE,
+    account_type    VARCHAR(20) NOT NULL CHECK (account_type IN ('personal','business')),
+    status          VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','closed')),
+    opened_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============ ANALYST ============
+CREATE TABLE analyst (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name   VARCHAR(120) NOT NULL,
+    email       VARCHAR(160) NOT NULL UNIQUE,
+    role        VARCHAR(30) NOT NULL DEFAULT 'fraud_analyst',
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ============ MODEL VERSION ============
+CREATE TABLE model_version (
+    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model_name     VARCHAR(60) NOT NULL,
+    version_label  VARCHAR(30) NOT NULL,
+    algorithm      VARCHAR(40) NOT NULL DEFAULT 'xgboost',
+    trained_at     TIMESTAMPTZ NOT NULL,
+    status         VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','retired')),
+    metrics        JSONB,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (model_name, version_label)
+);
+
+-- ============ TRANSACTION ============
+CREATE TABLE transaction (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_account_id   UUID NOT NULL REFERENCES account(id),
+    receiver_account_id UUID NOT NULL REFERENCES account(id),
+    amount              NUMERIC(18,2) NOT NULL CHECK (amount > 0),
+    currency            CHAR(3) NOT NULL DEFAULT 'USD',
+    transaction_type    VARCHAR(20) NOT NULL CHECK (transaction_type IN ('transfer','withdrawal','deposit','payment')),
+    channel             VARCHAR(20) NOT NULL CHECK (channel IN ('online','atm','pos','mobile','branch')),
+    merchant_name             VARCHAR(120),
+    merchant_category_at_txn  VARCHAR(60),  -- snapshot, not authoritative merchant data; see Section 8a Fix #1
+    device_fingerprint   VARCHAR(120),
+    ip_address           INET,
+    status               VARCHAR(20) NOT NULL DEFAULT 'completed' CHECK (status IN ('pending','completed','reversed')),
+    occurred_at          TIMESTAMPTZ NOT NULL,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (sender_account_id <> receiver_account_id)
+);
+
+CREATE INDEX idx_txn_sender   ON transaction(sender_account_id);
+CREATE INDEX idx_txn_receiver ON transaction(receiver_account_id);
+CREATE INDEX idx_txn_occurred ON transaction(occurred_at);
+
+-- ============ RISK ASSESSMENT ============
+CREATE TABLE risk_assessment (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id    UUID NOT NULL REFERENCES transaction(id),
+    model_version_id  UUID NOT NULL REFERENCES model_version(id),
+    risk_probability  NUMERIC(6,5)  NOT NULL CHECK (risk_probability BETWEEN 0 AND 1),
+    threshold_used    NUMERIC(6,5)  NOT NULL,
+    risk_score        NUMERIC(5,2) GENERATED ALWAYS AS (risk_probability * 100) STORED
+                          CHECK (risk_score BETWEEN 0 AND 100),
+    is_flagged        BOOLEAN GENERATED ALWAYS AS (risk_probability >= threshold_used) STORED,
+    shap_values       JSONB,
+    top_features      JSONB,
+    scored_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_risk_txn_latest ON risk_assessment(transaction_id, scored_at DESC);
+CREATE INDEX idx_risk_flagged_score ON risk_assessment(risk_score DESC) WHERE is_flagged;
+
+-- ============ FRAUD ALERT ============
+CREATE TABLE fraud_alert (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    risk_assessment_id  UUID NOT NULL UNIQUE REFERENCES risk_assessment(id),
+    status              VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open','investigating','closed')),
+    priority            VARCHAR(10) NOT NULL DEFAULT 'medium' CHECK (priority IN ('low','medium','high','critical')),
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    closed_at           TIMESTAMPTZ
+);
+
+CREATE INDEX idx_alert_status_priority ON fraud_alert(status, priority DESC);
+
+-- ============ INVESTIGATION ============
+CREATE TABLE investigation (
+    id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fraud_alert_id       UUID NOT NULL REFERENCES fraud_alert(id),
+    assigned_analyst_id  UUID NOT NULL REFERENCES analyst(id),
+    status               VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','closed','reopened')),
+    opened_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    closed_at            TIMESTAMPTZ
+);
+
+CREATE INDEX idx_investigation_analyst ON investigation(assigned_analyst_id);
+CREATE UNIQUE INDEX uq_one_open_investigation_per_alert
+    ON investigation(fraud_alert_id)
+    WHERE status IN ('open','in_progress');
+
+-- ============ INVESTIGATION DECISION (append-only) ============
+CREATE TABLE investigation_decision (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    investigation_id    UUID NOT NULL REFERENCES investigation(id),
+    analyst_id          UUID NOT NULL REFERENCES analyst(id),
+    risk_assessment_id  UUID NOT NULL REFERENCES risk_assessment(id),
+    decision            VARCHAR(20) NOT NULL CHECK (decision IN ('fraud','legitimate','escalate')),
+    notes               TEXT,
+    decided_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_decision_investigation ON investigation_decision(investigation_id);
+CREATE INDEX idx_decision_type ON investigation_decision(decision);
+
+-- ============ AUDIT LOG ============
+CREATE TABLE audit_log (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    actor_id     UUID,
+    actor_type   VARCHAR(20) NOT NULL CHECK (actor_type IN ('analyst','system')),
+    action       VARCHAR(50) NOT NULL,
+    entity_type  VARCHAR(50) NOT NULL,
+    entity_id    UUID NOT NULL,
+    details      JSONB,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_audit_entity ON audit_log(entity_type, entity_id);
 ```
 
 **Design decisions:**
