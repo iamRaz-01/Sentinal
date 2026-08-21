@@ -172,6 +172,8 @@ sequenceDiagram
     A->>UI: Submit decision (Fraud/Legitimate/Escalate)
     UI->>DB: Store investigation record
 ```
+### 9.3 Class Diagram 
+<img width="802" height="846" alt="Sentinal_Fraud_ERTD_Fixed-Page-2 drawio" src="https://github.com/user-attachments/assets/eab1cb75-3fdd-41fd-ab2a-3a062d4b6193" />
 
 ---
 
