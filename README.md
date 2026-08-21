@@ -377,15 +377,5 @@ Historical Transactions → Graph Builder → GNN → Account Embeddings → sto
 
 ---
 
-## 13. Consistency Check
-
-| Requirement | Reflected in DB | Reflected in Architecture | Reflected in UML |
-|---|---|---|---|
-| FR-01 | `transaction.risk_score`, `is_flagged` | Scoring Service | Sequence diagram step 1–2 |
-| FR-02 | Query: flagged transactions sorted by `risk_score` | API → Dashboard | Use case: View Dashboard |
-| FR-03 | `transaction.risk_reason` | SHAP Explainer → DB → Detail View | Use case: Investigate Transaction |
-| FR-04 | `investigation` table | API writes to DB | Use case: Record Decision |
-
-Every requirement has a corresponding field, service, and diagram element — no orphaned requirements, no undocumented features.
 
 ---
