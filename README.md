@@ -177,46 +177,9 @@ sequenceDiagram
 
 ## 10. ER Diagram
 
-```mermaid
-erDiagram
-    ACCOUNT ||--o{ TRANSACTION : "sends/receives"
-    TRANSACTION ||--o| INVESTIGATION : "reviewed via"
-    ANALYST ||--o{ INVESTIGATION : "performs"
+<img width="2242" height="1212" alt="Sentinal_Fraud_ERTD_Fixed drawio" src="https://github.com/user-attachments/assets/eb21452f-8e22-43a0-9620-fba30db880c1" />
 
-    ACCOUNT {
-        string account_id PK
-        string account_type
-        datetime created_at
-    }
 
-    TRANSACTION {
-        string transaction_id PK
-        string sender_account_id FK
-        string receiver_account_id FK
-        decimal amount
-        datetime timestamp
-        string transaction_type
-        float risk_score
-        boolean is_flagged
-        string risk_reason
-    }
-
-    INVESTIGATION {
-        string investigation_id PK
-        string transaction_id FK
-        string analyst_id FK
-        string decision
-        string note
-        datetime decided_at
-    }
-
-    ANALYST {
-        string analyst_id PK
-        string name
-    }
-```
-
-*Reviewer note:* `ACCOUNT` is modeled as a first-class entity now — not because Phase 1 needs account-level queries, but because `TRANSACTION.sender_account_id` / `receiver_account_id` are exactly the edges a Phase 2 graph needs. This satisfies NFR-05 without adding any Phase 1 build work.
 
 ---
 
@@ -225,37 +188,7 @@ erDiagram
 **Tables (PostgreSQL):**
 
 ```sql
-CREATE TABLE account (
-    account_id      VARCHAR PRIMARY KEY,
-    account_type    VARCHAR,
-    created_at      TIMESTAMP DEFAULT NOW()
-);
 
-CREATE TABLE transaction (
-    transaction_id      VARCHAR PRIMARY KEY,
-    sender_account_id   VARCHAR REFERENCES account(account_id),
-    receiver_account_id VARCHAR REFERENCES account(account_id),
-    amount              DECIMAL(14,2) NOT NULL,
-    timestamp            TIMESTAMP NOT NULL,
-    transaction_type     VARCHAR,
-    risk_score           FLOAT,
-    is_flagged           BOOLEAN DEFAULT FALSE,
-    risk_reason           TEXT
-);
-
-CREATE TABLE analyst (
-    analyst_id   VARCHAR PRIMARY KEY,
-    name         VARCHAR NOT NULL
-);
-
-CREATE TABLE investigation (
-    investigation_id  VARCHAR PRIMARY KEY,
-    transaction_id    VARCHAR REFERENCES transaction(transaction_id),
-    analyst_id        VARCHAR REFERENCES analyst(analyst_id),
-    decision          VARCHAR CHECK (decision IN ('Fraud','Legitimate','Escalate')),
-    note              TEXT,
-    decided_at        TIMESTAMP DEFAULT NOW()
-);
 ```
 
 **Design decisions:**
