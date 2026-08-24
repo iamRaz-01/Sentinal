@@ -173,7 +173,7 @@ sequenceDiagram
     UI->>DB: Store investigation record
 ```
 ### 9.3 Class Diagram 
-![Uploading Sentinal_Fraud_ERTD_Fixed-Page-2.drawio (1).png…]()
+<img width="802" height="846" alt="Sentinal_Fraud_ERTD_Fixed-Page-2 drawio (1)" src="https://github.com/user-attachments/assets/4ccecb30-43a7-4189-a3c4-cd576f0baea2" />
 
 
 ---
